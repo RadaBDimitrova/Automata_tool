@@ -13,6 +13,13 @@ MyString::MyString(size_t capacity) {
 	}
 }
 
+MyString::MyString(char c) {
+	str._short.string[SIZE_SSO - 1] = 1;
+	str._short.string[0] = c;
+	useShort();
+}
+
+
 MyString operator+(const MyString& lhs, const MyString& rhs) {
 	MyString result(lhs);
 	result += rhs;

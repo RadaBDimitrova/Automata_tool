@@ -45,6 +45,9 @@ public:
 	friend Automata Kleene(const Automata& autom);
 	friend Automata Complement(const Automata& autom);
 
+	friend Automata readAutomataFromBinary(const char* name);
+	friend void writeAutomataToBinary(const char* name, const Automata& toWrite);
+
 private:
 	bool isFinal(size_t state) const;
 	bool isStart(size_t state) const;
@@ -63,3 +66,6 @@ Automata Union(const Automata& first, const Automata& second);
 Automata Concatenation(const Automata& first, const Automata& second);
 Automata Kleene(const Automata& autom);
 Automata Complement(const Automata& autom);
+
+Automata readAutomataFromBinary(const char* name);
+void writeAutomataToBinary(const char* name, const Automata& toWrite);

@@ -28,5 +28,5 @@ class RegExParse {
 	};
 
 	RegExpr* expr;
-	RegExpr* parseExpression(const StringView& str)
+	RegExpr* parseExpression(const StringView& str);
 };

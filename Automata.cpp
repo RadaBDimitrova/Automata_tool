@@ -107,8 +107,7 @@ void Automata::addState() {
 }
 
 void Automata::addAlphabet(const Automata& other) {
-	for (size_t i = 0; i < other.alphabet.getSize(); i++)
-	{
+	for (size_t i = 0; i < other.alphabet.getSize(); i++) {
 		if (!alphabet.contains(other.alphabet[i])) {
 			alphabet.push_back(other.alphabet[i]);
 		}
@@ -234,7 +233,7 @@ void Automata::Minimize() {
 
 void Automata::makeTotal() {
 	bool hasEmpty = false;
-	for (size_t i = 0; i < states; i++){
+	for (size_t i = 0; i < states; i++) {
 
 		for (size_t j = 0; j < alphabet.getSize(); j++) {
 
@@ -255,36 +254,36 @@ void Automata::makeTotal() {
 	}
 }
 
-Automata Automata::rpnToAutomata(const MyString& rpn) {
+Automata Automata::rpnToAutomata(const MyString& rpn) { //using Reverse Polish Notation (RPN)
 	Stack<Automata> buildStack;
+
 	for (size_t i = 0; i < rpn.length(); i++) {
-		if(rpn[i] == '+')
-		{
+		if (rpn[i] == '+') {
 			Automata a1 = buildStack.peek();
 			buildStack.pop();
 			Automata a2 = buildStack.peek();
 			buildStack.pop();
+
 			Automata result = Union(a1, a2);
 			buildStack.push(std::move(result));
 		}
-		else if (rpn[i] == '.')
-		{
+		else if (rpn[i] == '.') {
 			Automata a1 = buildStack.peek();
 			buildStack.pop();
 			Automata a2 = buildStack.peek();
 			buildStack.pop();
+
 			Automata result = Concatenation(a1, a2);
 			buildStack.push(std::move(result));
 		}
-		else if (rpn[i] == '*')
-		{
+		else if (rpn[i] == '*') {
 			Automata a1 = buildStack.peek();
 			buildStack.pop();
+
 			Automata result = Kleene(a1);
 			buildStack.push(std::move(result));
 		}
-		else
-		{
+		else {
 			buildStack.push(Automata(rpn[i]));
 		}
 	}
@@ -298,14 +297,15 @@ Automata::Automata(char c) {
 	start.push_back(0);
 	addState();
 	end.push_back(1);
-	links.push_back({0, c, 1});
+	links.push_back({ 0, c, 1 });
 }
 
 MyString Automata::regExToRPN(const MyString& regEx) {
 	if (regEx.length() == 1)
 	{
-		if (!isValidChar(regEx[0]))
+		if (!helper::isValidChar(regEx[0])) {
 			throw std::invalid_argument("Symbol is invalid!");
+		}
 		return regEx;
 	}
 	size_t bracketCtr = 0;
@@ -315,19 +315,108 @@ MyString Automata::regExToRPN(const MyString& regEx) {
 			bracketCtr++;
 			continue;
 		}
-		if (regEx[i] == ')')
-		{
+		if (regEx[i] == ')') {
 			bracketCtr--;
 			continue;
 		}
+
 		if (bracketCtr == 1) {
 			if (regEx[i] == '.' || regEx[i] == '+') {
-				return regExToRPN(regEx.substr(1, i - 2)) + regExToRPN(regEx.substr(i + 1, regEx.length() - i - 2) + regEx[i];		
+				return regExToRPN(regEx.substr(1, i - 2)) + regExToRPN(regEx.substr(i + 1, regEx.length() - i - 2) + regEx[i]);
 			}
-			if(regEx[i] == '*')
+
+			if (regEx[i] == '*') {
 				return regExToRPN(regEx.substr(1, i - 2)) + regEx[i];
 
+			}
 			throw std::invalid_argument("Invalid regEx!");
 		}
 	}
+}
+
+Automata readAutomataFromBinary(const char* name) {
+	std::ifstream file(name, std::ios::binary);
+	if (!file.is_open()) {
+		throw std::exception("File is not open!");
+	}
+	Automata result;
+
+	size_t sizeLinks;
+	file.read((char*)(&sizeLinks), sizeof(size_t));
+	result.links.resize(sizeLinks);
+
+	for (size_t i = 0; i < sizeLinks; i++) {
+		size_t first, second;
+		char rel;
+		file.read((char*)(&first), sizeof(size_t));
+		file.read((char*)(&rel), sizeof(char));
+		file.read((char*)(&second), sizeof(size_t));
+		result.links.push_back({ first, rel, second });
+	}
+
+	size_t sizeStart;
+	file.read((char*)(&sizeStart), sizeof(size_t));
+	result.start.resize(sizeStart);
+	for (size_t i = 0; i < sizeStart; i++) {
+		size_t state;
+		file.read((char*)(&state), sizeof(size_t));
+		result.start.push_back(state);
+	}
+
+	size_t sizeEnd;
+	file.read((char*)(&sizeEnd), sizeof(size_t));
+	result.end.resize(sizeEnd);
+	for (size_t i = 0; i < sizeEnd; i++) {
+		size_t state;
+		file.read((char*)(&state), sizeof(size_t));
+		result.end.push_back(state);
+	}
+
+	size_t sizeAlpha;
+	file.read((char*)(&sizeAlpha), sizeof(size_t));
+	result.alphabet.resize(sizeAlpha);
+	for (size_t i = 0; i < sizeAlpha; i++) {
+		char ch;
+		file.read((char*)(&ch), sizeof(size_t));
+		result.alphabet.push_back(ch);
+	}
+
+	size_t states;
+	file.read((char*)(&states), sizeof(size_t));
+	result.states = states;
+
+	bool det;
+	file.read((char*)(&det), sizeof(bool));
+	result.isDeterministic = det;
+
+}
+void writeAutomataToBinary(const char* name, const Automata& toWrite) {
+	std::ofstream file(name, std::ios::binary);
+	if (!file.is_open()) {
+		throw std::exception("File is not open!");
+	}
+
+	size_t sizeLinks = toWrite.links.getSize();
+	file.write((const char*)(&sizeLinks), sizeof(size_t));
+	for (size_t i = 0; i < sizeLinks; i++){
+		file.write((const char*)(&toWrite.links[i].first), sizeof(size_t));
+		file.write((const char*)(&toWrite.links[i].rel), sizeof(char));
+		file.write((const char*)(&toWrite.links[i].second), sizeof(size_t));
+	}
+
+	size_t sizeStart = toWrite.start.getSize();
+	file.write((const char*)(&sizeStart), sizeof(size_t));
+	for (size_t i = 0; i < sizeStart; i++) {
+		file.write((const char*)(&toWrite.start[i]), sizeof(size_t));
+	}
+
+	size_t sizeEnd = toWrite.end.getSize();
+	file.write((const char*)(&sizeEnd), sizeof(size_t));
+	for (size_t i = 0; i < sizeEnd; i++) {
+		file.write((const char*)(&toWrite.end[i]), sizeof(size_t));
+	}
+
+	file.write((const char*)(&toWrite.states), sizeof(size_t));
+	file.write((const char*)(&toWrite.isDeterministic), sizeof(bool));
+
 }
