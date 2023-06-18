@@ -34,17 +34,21 @@ public:
 	void erase(size_t first, size_t last);
 	void pop_back();
 	void clear();
-	void swap(Vector& other); //
+	void swap(Vector& other); 
 	size_t getSize() const;
 	size_t getCap() const;
 	void setSize(size_t s);
 	void resize(size_t newCap);
 	bool contains(const T& data) const;
 	size_t find(const T& data) const;
+	bool operator==(const Vector<T>& other) const {
+		return !(this != &other);
+	}
 
 	const static size_t nopos = -1; //return for not found
 	~Vector();
 };
+
 
 template <typename T>
 Vector<T>::Vector() {

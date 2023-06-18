@@ -1,11 +1,9 @@
 #pragma once
 #include "Vector.hpp"
 #include "StringView.h"
-#include "Helper.hpp"
-#include "Pair.hpp"
-#include "RegEx.h"
 #include "Queue.hpp"
 #include "Stack.hpp"
+#include <fstream>
 
 class Automata
 {
@@ -23,11 +21,11 @@ private:
 	Vector <size_t> start;
 	Vector <size_t> end;
 	Vector <char> alphabet;
-	size_t states;
-	bool isDeterministic;
+	size_t states = 0;
+	bool isDeterministic = false;
 
 public:
-	Automata() = default; // ?
+	Automata() = default;
 	Automata(const MyString& expr);
 
 	void addState();

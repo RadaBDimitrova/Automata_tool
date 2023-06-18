@@ -1,5 +1,9 @@
 #include "Automata.h"
 
+bool isValidChar(char c) {
+	return ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z') || c == '+' || c == '*' || c == '.' || c == '(' || c == ')';
+}
+
 Automata Union(const Automata& first, const Automata& second) {
 	Automata result = first;
 	result.isDeterministic = false;
@@ -219,7 +223,7 @@ void Automata::Determinate() {
 void Automata::reverse() {
 	start.swap(end);
 	for (size_t i = 0; i < links.getSize(); i++) {
-		helper::swap(links[i].first, links[i].second);
+		std::swap(links[i].first, links[i].second);
 	}
 }
 
@@ -303,7 +307,7 @@ Automata::Automata(char c) {
 MyString Automata::regExToRPN(const MyString& regEx) {
 	if (regEx.length() == 1)
 	{
-		if (!helper::isValidChar(regEx[0])) {
+		if (!isValidChar(regEx[0])) {
 			throw std::invalid_argument("Symbol is invalid!");
 		}
 		return regEx;
