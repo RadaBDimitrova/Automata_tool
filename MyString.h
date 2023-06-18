@@ -19,6 +19,7 @@ public:
 
 	MyString();
 	MyString(const char* data);
+	MyString(char c);
 	MyString(const MyString& other);
 	MyString& operator=(const MyString& other);
 	~MyString();

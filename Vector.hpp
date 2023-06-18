@@ -34,12 +34,15 @@ public:
 	void erase(size_t first, size_t last);
 	void pop_back();
 	void clear();
-	//void swap(Vector& other); TBA
+	void swap(Vector& other); //
 	size_t getSize() const;
 	size_t getCap() const;
 	void setSize(size_t s);
 	void resize(size_t newCap);
 	bool contains(const T& data) const;
+	size_t find(const T& data) const;
+
+	const static size_t nopos = -1; //return for not found
 	~Vector();
 };
 
@@ -190,6 +193,19 @@ void Vector<T>::clear() {
 }
 
 template <typename T>
+void Vector<T>::swap(Vector& other) {
+	size_t temp = capacity;
+	capacity = other.capacity;
+	other.capacity = temp;
+	temp = size;
+	size = other.size;
+	other.size = temp;
+	T* ptr = arr;
+	arr = other.arr;
+	other.arr = ptr;
+}
+
+template <typename T>
 size_t Vector<T>::getSize() const {
 	return size;
 }
@@ -213,14 +229,23 @@ void Vector<T>::resize(size_t newCap) {
 
 template <typename T>
 bool Vector<T>::contains(const T& data) const {
-	size_t size = getSize();
-	for (size_t i = 0; i < 32; i++) {
+	for (size_t i = 0; i < getSize(); i++) {
 		if (arr[i] == data) {
 			return true;
 		}
 	}
 	return false;
 }
+template <typename T>
+size_t Vector<T>::find(const T& data) const {
+	for (size_t i = 0; i < getSize(); i++) {
+		if (arr[i] == data) {
+			return i;
+		}
+	}
+	return nopos;
+}
+
 template <typename T>
 void Vector<T>::setSize(size_t s) {
 	size = s;
