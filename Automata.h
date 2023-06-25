@@ -37,6 +37,8 @@ public:
 	void reverse();
 	void Minimize();
 	void makeTotal();
+	MyString automataToRegEx() const;
+	void print() const;
 
 	friend Automata Union(const Automata& first, const Automata& second);
 	friend Automata Concatenation(const Automata& first, const Automata& second);
@@ -52,13 +54,16 @@ private:
 
 	bool accepts(size_t current, const StringView& word) const;
 	void addAlphabet(const Automata& other);
+	bool isDeterm() const;
+	void setDeterm();
 
 	Automata rpnToAutomata(const MyString& rpn);
 	explicit Automata(char c);
-	MyString regExToRPN(const MyString& regEx);
+	MyString regExToRPN(const MyString& regEx) const;
+	MyString regExOfState(size_t ind) const;
+	Vector<size_t> getStates() const;
 
 };
-
 
 Automata Union(const Automata& first, const Automata& second);
 Automata Concatenation(const Automata& first, const Automata& second);

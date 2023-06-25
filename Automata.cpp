@@ -28,7 +28,7 @@ Automata Concatenation(const Automata& first, const Automata& second) {
 	result.isDeterministic = false;
 
 	for (size_t i = 0; i < second.links.getSize(); i++) {
-		if (second.isStart(result.links[i].first)) { //1. every final from first has to do the job of the start from second
+		if (second.start.contains(result.links[i].first)) { //1. every final from first has to do the job of the start from second
 			for (size_t j = 0; j < result.end.getSize(); j++) {
 				result.links.push_back({ result.end[j], second.links[i].rel, second.links[i].second + result.states });
 			}
@@ -40,7 +40,7 @@ Automata Concatenation(const Automata& first, const Automata& second) {
 	bool clearEnd = true;
 	for (size_t i = 0; i < second.start.getSize(); i++) {
 		//2. end in first stays only if there is a state in second that is both final and start
-		if (second.isFinal(second.start[i])) {
+		if (second.end.contains(second.start[i])) {
 			clearEnd = false;
 		}
 	}
@@ -52,6 +52,7 @@ Automata Concatenation(const Automata& first, const Automata& second) {
 	}
 	result.addAlphabet(second);
 	result.states += second.states;
+	result.setDeterm();
 
 	return result;
 }
@@ -60,18 +61,21 @@ Automata Kleene(const Automata& aut) {
 	Automata result = aut;
 	result.isDeterministic = false;
 	for (size_t i = 0; i < result.links.getSize(); i++) {
-		if (result.isStart(result.links[i].first)) { //1. every final has to do the job of the start
+		if (result.start.contains(result.links[i].first)) { //1. every final has to do the job of the start
 			for (size_t j = 0; j < result.end.getSize(); j++) {
 				result.links.push_back({ result.end[j], result.links[i].rel, result.links[i].second });
 			}
 		}
 	}
-	for (size_t i = 0; i < result.start.getSize(); i++) { //
+
+	for (size_t i = 0; i < result.start.getSize(); i++) { //2. make all starting ending
 		if (!result.end.contains(result.start[i])) {
 			result.end.push_back(result.start[i]);
 		}
 	}
-	result.isDeterministic = false;
+
+	result.setDeterm();
+
 	return result;
 }
 
@@ -91,15 +95,36 @@ Automata::Automata(const MyString& expr) {
 	(*this) = std::move(rpnToAutomata(expr));
 }
 
+bool Automata::isDeterm() const {
+	for (size_t i = 0; i < links.getSize(); i++) {
+		for (size_t j = i + 1; j < links.getSize(); j++) {
+			if (links[i].rel == links[j].rel &&
+				links[i].first == links[j].first &&
+				links[i].second != links[j].second) {
+				return false;
+			}
+		}
+	}
+	return true;
+}
 
-bool Automata::isFinal(size_t state) const {
+void Automata::setDeterm() {
+	if (isDeterm()) {
+		isDeterministic = true;
+	}
+	else {
+		isDeterministic = false;
+	}
+}
+
+bool Automata::isFinal(size_t state) const { //everywhere it is used is reworked
 	if (end.contains(links[state].second)) {
 		return true;
 	}
 	return false;
 }
 
-bool Automata::isStart(size_t state) const {
+bool Automata::isStart(size_t state) const { //everywhere it is used is reworked
 	if (start.contains(links[state].first)) {
 		return true;
 	}
@@ -128,7 +153,7 @@ bool Automata::accepts(const StringView& word) const {
 }
 
 bool Automata::accepts(size_t current, const StringView& word) const {
-	if (word.length() == 0 && isFinal(current)) {
+	if (word.length() == 0 && end.contains(current)) {
 		return true;
 	}
 	else if (word.length() == 0) {
@@ -148,7 +173,7 @@ bool Automata::isEmptyLanguage() const {
 	do {
 
 		for (size_t i = 0; i < newReachable.getSize(); i++) {
-			if (isFinal(newReachable[i])) {
+			if (end.contains(newReachable[i])) {
 				return false;
 			}
 			reachableStates.push_back(newReachable[i]);
@@ -161,7 +186,7 @@ bool Automata::isEmptyLanguage() const {
 			}
 		}
 
-	} while (!newReachable.getSize() != 0);
+	} while (newReachable.getSize() != 0); //had extra !
 
 	return true;
 }
@@ -171,11 +196,20 @@ void Automata::Determinate() {
 	if (isDeterministic) {
 		return;
 	}
+	bool hasFinalStart = false;
+	for (size_t i = 0; i < start.getSize(); i++) {
+		if (end.contains(start[i])) {
+			hasFinalStart = true;
+		}
+	}
 
 	Automata result;
 	result.addState();
 	result.start.push_back(0);
 
+	if (hasFinalStart) {
+		result.end.push_back(0);
+	}
 	Vector<Vector<size_t>> oldToNew; //vector for saving corresponding set of states from old to state in new
 	oldToNew.push_back(start);
 
@@ -215,6 +249,7 @@ void Automata::Determinate() {
 			}
 			result.links.push_back({ currentInd, alphabet[i], goToInd });
 		}
+		creationQueue.pop();
 	}
 	isDeterministic = true;
 	(*this) = std::move(result);
@@ -304,7 +339,7 @@ Automata::Automata(char c) {
 	links.push_back({ 0, c, 1 });
 }
 
-MyString Automata::regExToRPN(const MyString& regEx) {
+MyString Automata::regExToRPN(const MyString& regEx) const {
 	if (regEx.length() == 1)
 	{
 		if (!isValidChar(regEx[0])) {
@@ -336,6 +371,44 @@ MyString Automata::regExToRPN(const MyString& regEx) {
 			throw std::invalid_argument("Invalid regEx!");
 		}
 	}
+}
+
+MyString Automata::automataToRegEx() const {
+	MyString result;
+	//recursively parse from automata using regExOfState // Zinoviev's method/ lemma
+	return result;
+}
+
+MyString Automata::regExOfState(size_t ind) const {
+	MyString result;
+	size_t transitions = 0;
+	for (size_t i = 0; i < links.getSize(); i++) {
+		if (links[i].first == ind) {
+			if (transitions > 0) {
+				result += '+';
+			}
+			result += links[i].rel;
+			result += links[i].second;
+			transitions++;
+		}
+	}
+	if (end.contains(ind)) {
+		result += "+E";
+	}
+	return result;
+}
+
+Vector<size_t> Automata::getStates() const {
+	Vector<size_t> result;
+	for (size_t i = 0; i < links.getSize(); i++) {
+		if (!result.contains(links[i].first)) {
+			result.push_back(links[i].first);
+		}
+		if (!result.contains(links[i].second)) {
+			result.push_back(links[i].second);
+		}
+	}
+	return result;
 }
 
 Automata readAutomataFromBinary(const char* name) {
@@ -402,7 +475,7 @@ void writeAutomataToBinary(const char* name, const Automata& toWrite) {
 
 	size_t sizeLinks = toWrite.links.getSize();
 	file.write((const char*)(&sizeLinks), sizeof(size_t));
-	for (size_t i = 0; i < sizeLinks; i++){
+	for (size_t i = 0; i < sizeLinks; i++) {
 		file.write((const char*)(&toWrite.links[i].first), sizeof(size_t));
 		file.write((const char*)(&toWrite.links[i].rel), sizeof(char));
 		file.write((const char*)(&toWrite.links[i].second), sizeof(size_t));
@@ -422,5 +495,35 @@ void writeAutomataToBinary(const char* name, const Automata& toWrite) {
 
 	file.write((const char*)(&toWrite.states), sizeof(size_t));
 	file.write((const char*)(&toWrite.isDeterministic), sizeof(bool));
+
+}
+
+void Automata::print() const {
+	for (size_t i = 0; i < links.getSize(); i++) {
+		std::cout << links[i].first << "goes with" << links[i].rel << "to" << links[i].second << std::endl;
+	}
+	std::cout << "Start states are:";
+	for (size_t i = 0; i < start.getSize(); i++) {
+		std::cout << start[i] << "," << std::endl;
+	}
+	std::cout << "Final states are:";
+	for (size_t i = 0; i < end.getSize(); i++) {
+		std::cout << end[i] << ",";
+	}
+	std::cout << std::endl;
+	std::cout << "Alphabet is:";
+	for (size_t i = 0; i < alphabet.getSize(); i++) {
+		std::cout << alphabet[i] << ",";
+	}
+	std::cout << std::endl;
+
+	std::cout << "State count is:" << states << std::endl;
+	std::cout << "Automaton is:";
+	if (isDeterministic){
+		std::cout << " Deterministic" << std::endl;
+	}
+	else {
+		std::cout << " Non-Deterministic" << std::endl;
+	}
 
 }
