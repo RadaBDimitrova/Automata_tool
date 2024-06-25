@@ -2,7 +2,7 @@
 #include <exception>
 
 template <typename T>
-class MyQueue // from Angel Dimitriev's github
+class MyQueue 
 {
 	T* data;
 	size_t capacity;
