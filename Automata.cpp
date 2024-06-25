@@ -117,14 +117,14 @@ void Automata::setDeterm() {
 	}
 }
 
-bool Automata::isFinal(size_t state) const { //everywhere it is used is reworked
+bool Automata::isFinal(size_t state) const { // reworked
 	if (end.contains(links[state].second)) {
 		return true;
 	}
 	return false;
 }
 
-bool Automata::isStart(size_t state) const { //everywhere it is used is reworked
+bool Automata::isStart(size_t state) const { // reworked
 	if (start.contains(links[state].first)) {
 		return true;
 	}
@@ -186,7 +186,7 @@ bool Automata::isEmptyLanguage() const {
 			}
 		}
 
-	} while (newReachable.getSize() != 0); //had extra !
+	} while (newReachable.getSize() != 0); 
 
 	return true;
 }
@@ -375,6 +375,7 @@ MyString Automata::regExToRPN(const MyString& regEx) const {
 
 MyString Automata::automataToRegEx() const {
 	MyString result;
+	//TBA:
 	//recursively parse from automata using regExOfState // Zinoviev's method/ lemma
 	return result;
 }
